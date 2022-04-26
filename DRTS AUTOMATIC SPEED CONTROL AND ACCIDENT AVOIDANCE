@@ -1,0 +1,139 @@
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+#define EYE_BLINK A0 
+const int buzzer_pin = 8;               // pin where the Buzzer is connected to
+const int trig_pin1 = 9;                  // digital pin for HC-SR04 echo connector ( Front side )
+const int echo_pin1 = 10;              // digital pin for HC-SR04 Trigger connector ( Front side )
+const int trig_pin2 = 6;                  // digital pin for HC-SR04 echo connector ( Back side )
+const int echo_pin2 = 7;                // digital pin for HC-SR04 Trigger connector ( Back side )
+const int motor= 5;                        // pin where the Motor is connected to
+int distance_cm1,distance_cm2;   // distance read from ultrasonic sensors
+long duration1,duration2;
+LiquidCrystal_I2C lcd(0x3F, 16, 2);
+
+void setup()
+{
+  pinMode(EYE_BLINK, INPUT);          // Set the Ir Sensor pin as input pin.
+  lcd.begin(16, 2);
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  pinMode(trig_pin1, OUTPUT);         // Set the Trigger pin of front Ultrasonic Sensor pin as output pin.
+  pinMode(echo_pin1, INPUT);          // Set the Echo pin of front Ultrasonic Sensor pin as input pin.
+  lcd.setCursor(1, 1);
+  pinMode(trig_pin2, OUTPUT);         // Set the Trigger pin of Back Ultrasonic Sensor pin as output pin.
+  pinMode(echo_pin2, INPUT);          // Set the Echo pin of Back Ultrasonic Sensor pin as input pin.
+  pinMode(buzzer_pin, OUTPUT);        // Set the Buzzer pin as output pin.
+  pinMode(motor, OUTPUT);             // Set the motor as output pin.
+}
+
+void loop()
+{
+  digitalWrite(trig_pin1, LOW);         // Turn the Trigger pin off
+  delayMicroseconds(2);
+  digitalWrite(trig_pin1, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig_pin1, LOW);
+  duration1 = pulseIn(echo_pin1, HIGH);
+  distance_cm1 = (duration1*0.034)/2.0; 
+  digitalWrite(trig_pin2, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trig_pin2, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trig_pin2, LOW);
+  duration2 = pulseIn(echo_pin2, HIGH);
+  distance_cm2 = (duration2*0.034)/2.0;
+  
+  if(digitalRead(EYE_BLINK))
+  {
+   if((distance_cm1 <= 40)&&(distance_cm2 <= 40))
+   {
+      digitalWrite(buzzer_pin, HIGH); 
+      digitalWrite(motor, HIGH);
+      lcd.setCursor(0, 0);
+      lcd.print("FRONT & BACK ");
+      lcd.setCursor(0, 1);
+      lcd.print("OBJECTS DETECTED ");
+      delay(1000);                      //Delay 1000 milliseconds for displaying the text.
+      lcd.clear();
+      }
+      else if (distance_cm1 <= 40)
+      {
+        digitalWrite(buzzer_pin, HIGH);
+        digitalWrite(motor, HIGH);
+        lcd.setCursor(0, 0);
+        lcd.print("FRONT OBJ DETECT!");
+        lcd.setCursor(0, 1);
+        lcd.print("Distance: ");
+        lcd.print(distance_cm1);
+        lcd.print("cm");
+        delay(1000);                  
+        lcd.clear();
+        }
+      else if (distance_cm2 <= 40)
+      {
+        digitalWrite(buzzer_pin, HIGH);
+        digitalWrite(motor, LOW);
+        lcd.setCursor(0, 0);
+        lcd.print("BACK OBJ DETECT!");
+        lcd.setCursor(0, 1);
+        lcd.print("Distance: ");
+        lcd.print(distance_cm2);
+        lcd.print("cm");
+        delay(1000);                  
+        lcd.clear();
+        }
+      else
+      {
+        digitalWrite(buzzer_pin, LOW);
+        digitalWrite(motor, LOW);
+        lcd.setCursor(0, 0);
+        lcd.print("FRONT & BACK NO");
+        lcd.setCursor(0, 1);
+        lcd.print("OBJECTS DETECTED");
+        delay(1000);                  
+        lcd.clear();
+        }
+  }
+  else
+  {
+    if (!digitalRead(EYE_BLINK))
+    {
+      delay(1000);                      
+      if (!digitalRead(EYE_BLINK))
+      {
+        delay(1000);                    
+        if (!digitalRead(EYE_BLINK))
+        {
+          if (!digitalRead(EYE_BLINK)&&(distance_cm2 <= 40))
+          {
+            digitalWrite(buzzer_pin, HIGH);
+            digitalWrite(motor, LOW);
+            lcd.setCursor(0, 0);
+            lcd.print("DRIVER IS IN ");
+            lcd.setCursor(0, 1);
+            lcd.print("SLEEPING MODE");
+            delay(2000);                
+          }
+          else 
+          {
+            digitalWrite(buzzer_pin, HIGH);
+            digitalWrite(motor, HIGH);
+            lcd.setCursor(0, 0);
+            lcd.print("DRIVER IS IN ");
+            lcd.setCursor(0, 1);
+            lcd.print("SLEEPING MODE");
+            delay(2000);                
+          }
+        }
+        else
+        {
+          exit;
+        }
+      }
+    }
+    else
+    {
+      exit;
+    }
+  }
+}
